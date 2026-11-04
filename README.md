@@ -1,73 +1,162 @@
-# Welcome to your Lovable project
+# Universal File Converter
 
-## Project info
+A modern, client-side file conversion tool that supports multiple file formats across documents, images, audio, and video. Built with React, TypeScript, and Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/c112cd6e-002d-485a-aae6-7a251ba4ca7f
+## 🎨 Features
 
-## How can I edit this code?
+### Recognized Input Formats
+- **Documents**: Markdown, PDF, DOCX, TXT, HTML, RTF
+- **Images**: JPG, PNG, GIF, WEBP, BMP, SVG, ICO
+- **Audio**: MP3, WAV, OGG, FLAC, AAC, M4A
+- **Video**: MP4, WEBM, AVI, MOV, MKV, OGV
 
-There are several ways of editing your application.
+PDF, DOCX and RTF are recognized but cannot yet be converted. Audio/video decoding depends on browser codec support. Image output is JPG, PNG or WebP; GIF/BMP encoding is unavailable. SVG/ICO inputs can be rasterized.
 
-**Use Lovable**
+### Document Conversions
+- Markdown → HTML, PDF, DOCX, TXT
+- TXT → HTML, PDF, Markdown
+- HTML → PDF, TXT
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c112cd6e-002d-485a-aae6-7a251ba4ca7f) and start prompting.
+### Image Conversions
+- Convert supported image inputs to JPG, PNG or WebP (GIF inputs use a single frame)
+- Resize images with aspect ratio preservation
+- Adjust image quality and compression
+- Client-side processing for privacy
 
-Changes made via Lovable will be committed automatically to this repo.
+### Audio Conversions
+- Convert audio files to WAV format
+- Extract audio metadata (duration, sample rate, channels)
+- Web Audio API processing
 
-**Use your preferred IDE**
+### Video Conversions
+- Extract video frames as images
+- Create video thumbnails
+- Get video metadata (duration, resolution, size)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
+- Node.js 18+ or Bun
+- npm or bun package manager
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+# Clone the repository
+git clone https://github.com/patriotnewsactivism/md-style-converter.git
+cd md-style-converter
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
+# or
+bun install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
+# or
+bun dev
 ```
 
-**Edit a file directly in GitHub**
+The application will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Build for Production
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+# or
+bun run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 💡 Usage
 
-## What technologies are used for this project?
+1. **Select File Category**: Choose between Documents, Images, Audio, or Video
+2. **Upload File**: Click Select File to choose your file
+3. **Choose Target Format**: Select the desired output format
+4. **Configure Options**: Adjust quality, dimensions, or other format-specific settings
+5. **Convert & Download**: Click the convert button to process and download your file
 
-This project is built with:
+## 🎨 Color Scheme
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The application features a modern teal/cyan color scheme:
+- Primary: Teal (HSL: 180, 75%, 45%)
+- Accent: Cyan (HSL: 190, 85%, 50%)
+- Supports both light and dark modes
 
-## How can I deploy this project?
+## 🔒 Privacy & Security
 
-Simply open [Lovable](https://lovable.dev/projects/c112cd6e-002d-485a-aae6-7a251ba4ca7f) and click on Share -> Publish.
+Conversions run locally in your browser. Document exports remove active HTML and remote resources; Markdown preview omits embedded images. Review exported HTML before publishing it.
 
-## Can I connect a custom domain to my Lovable project?
+## 🛠️ Technology Stack
 
-Yes, you can!
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - UI components
+- **html2pdf.js** - PDF generation
+- **docx** - DOCX generation
+- **Canvas API** - Image processing
+- **Web Audio API** - Audio processing
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📝 Supported Conversions
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Documents
+| From | To |
+|------|-----|
+| Markdown | HTML, PDF, DOCX, TXT |
+| TXT | HTML, PDF, Markdown |
+| HTML | PDF, TXT |
+
+### Images
+| From | To |
+|------|-----|
+| JPG/JPEG | PNG, WEBP |
+| PNG | JPG, WEBP |
+| WEBP | JPG, PNG |
+| GIF | JPG, PNG, WEBP |
+| BMP | JPG, PNG, WEBP |
+
+### Audio
+| From | To |
+|------|-----|
+| MP3, WAV, OGG, FLAC, M4A, AAC | WAV |
+
+*Note: Browser-based audio conversion is limited. For advanced conversions, consider server-side solutions.*
+
+### Video
+| From | To |
+|------|-----|
+| MP4, WEBM, AVI, MOV, MKV, OGV | Frame extraction (JPG, PNG), Thumbnail |
+
+*Note: Full video format conversion requires server-side processing. This tool can extract frames and create thumbnails.*
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+## 🙏 Acknowledgments
+
+- Built with [shadcn/ui](https://ui.shadcn.com/)
+- Icons from [Lucide](https://lucide.dev/)
+- Inspired by the need for privacy-focused file conversion tools
+
+## 🔮 Future Enhancements
+
+- Server-side processing option for advanced conversions
+- Batch file conversion
+- Cloud storage integration
+- More audio/video format support via FFmpeg.wasm
+- PDF editing capabilities
+- OCR for image-to-text conversion
+
+## 📞 Support
+
+For issues, questions, or suggestions, please open an issue on GitHub.
+
+---
+
+**Made with ❤️ for privacy-conscious users**
