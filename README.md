@@ -4,11 +4,13 @@ A modern, client-side file conversion tool that supports multiple file formats a
 
 ## 🎨 Features
 
-### Multi-Format Support
+### Recognized Input Formats
 - **Documents**: Markdown, PDF, DOCX, TXT, HTML, RTF
 - **Images**: JPG, PNG, GIF, WEBP, BMP, SVG, ICO
 - **Audio**: MP3, WAV, OGG, FLAC, AAC, M4A
 - **Video**: MP4, WEBM, AVI, MOV, MKV, OGV
+
+PDF, DOCX and RTF are recognized but cannot yet be converted. Audio/video decoding depends on browser codec support. Image output is JPG, PNG or WebP; GIF/BMP encoding is unavailable. SVG/ICO inputs can be rasterized.
 
 ### Document Conversions
 - Markdown → HTML, PDF, DOCX, TXT
@@ -16,7 +18,7 @@ A modern, client-side file conversion tool that supports multiple file formats a
 - HTML → PDF, TXT
 
 ### Image Conversions
-- Convert between all major image formats
+- Convert supported image inputs to JPG, PNG or WebP (GIF inputs use a single frame)
 - Resize images with aspect ratio preservation
 - Adjust image quality and compression
 - Client-side processing for privacy
@@ -68,7 +70,7 @@ bun run build
 ## 💡 Usage
 
 1. **Select File Category**: Choose between Documents, Images, Audio, or Video
-2. **Upload File**: Click or drag-and-drop your file
+2. **Upload File**: Click Select File to choose your file
 3. **Choose Target Format**: Select the desired output format
 4. **Configure Options**: Adjust quality, dimensions, or other format-specific settings
 5. **Convert & Download**: Click the convert button to process and download your file
@@ -82,7 +84,7 @@ The application features a modern teal/cyan color scheme:
 
 ## 🔒 Privacy & Security
 
-All file conversions are performed **client-side** in your browser. Your files never leave your device, ensuring complete privacy and security.
+Conversions run locally in your browser. Document exports remove active HTML and remote resources; Markdown preview omits embedded images. Review exported HTML before publishing it.
 
 ## 🛠️ Technology Stack
 
@@ -108,23 +110,23 @@ All file conversions are performed **client-side** in your browser. Your files n
 ### Images
 | From | To |
 |------|-----|
-| JPG/JPEG | PNG, WEBP, BMP, GIF |
-| PNG | JPG, WEBP, BMP, GIF |
-| WEBP | JPG, PNG, BMP, GIF |
-| GIF | JPG, PNG, WEBP, BMP |
-| BMP | JPG, PNG, WEBP, GIF |
+| JPG/JPEG | PNG, WEBP |
+| PNG | JPG, WEBP |
+| WEBP | JPG, PNG |
+| GIF | JPG, PNG, WEBP |
+| BMP | JPG, PNG, WEBP |
 
 ### Audio
 | From | To |
 |------|-----|
-| MP3, WAV, OGG, M4A, AAC | WAV |
+| MP3, WAV, OGG, FLAC, M4A, AAC | WAV |
 
 *Note: Browser-based audio conversion is limited. For advanced conversions, consider server-side solutions.*
 
 ### Video
 | From | To |
 |------|-----|
-| MP4, WEBM, AVI, MOV, MKV | Frame extraction (JPG, PNG), Thumbnail |
+| MP4, WEBM, AVI, MOV, MKV, OGV | Frame extraction (JPG, PNG), Thumbnail |
 
 *Note: Full video format conversion requires server-side processing. This tool can extract frames and create thumbnails.*
 

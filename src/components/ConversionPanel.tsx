@@ -94,6 +94,9 @@ export const ConversionPanel = ({ file, category, onNewFile }: ConversionPanelPr
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Target Format Selection */}
+          {supportedFormats.length === 0 && (
+            <p className="text-sm text-muted-foreground">Conversion from this format is not available yet. Please upload a supported source format.</p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="target-format">Target Format</Label>
             <Select value={targetFormat} onValueChange={setTargetFormat}>

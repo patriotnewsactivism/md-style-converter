@@ -3,6 +3,7 @@ import { FileCategory, getFileTypeInfo, getFileExtension } from './fileTypes';
 import { convertImage, ImageConversionOptions } from './converters/imageConverter';
 import { 
   markdownToHtml, 
+  htmlToPlainText,
   convertMarkdownToDOCX, 
   convertHtmlToPDF,
   convertTextToHtml,
@@ -32,6 +33,11 @@ export class ConversionService {
         success: false,
         message: 'Unsupported source file format',
       };
+    }
+
+    targetFormat = targetFormat.toLowerCase();
+    if (!this.getSupportedConversions(getFileExtension(file.name)).includes(targetFormat)) {
+      return { success: false, message: 'This conversion is not supported' };
     }
 
     try {
@@ -160,9 +166,7 @@ export class ConversionService {
           message: 'Converted to PDF',
         };
       } else if (targetFormat === 'txt') {
-        const temp = document.createElement('div');
-        temp.innerHTML = content;
-        const text = temp.textContent || temp.innerText || '';
+        const text = htmlToPlainText(content);
         const blob = new Blob([text], { type: 'text/plain' });
         return {
           success: true,
@@ -216,7 +220,7 @@ export class ConversionService {
 
     // For video, we can extract frames or create thumbnails
     if (targetFormat === 'jpg' || targetFormat === 'jpeg' || targetFormat === 'png') {
-      const blob = await extractVideoFrame(file, options.timeInSeconds || 0);
+      const blob = await extractVideoFrame(file, options.timeInSeconds ?? 0, targetFormat);
       return {
         success: true,
         message: 'Extracted video frame',
@@ -251,12 +255,14 @@ export class ConversionService {
       'html': ['pdf', 'txt'],
       
       // Images
-      'jpg': ['png', 'webp', 'bmp', 'gif'],
-      'jpeg': ['png', 'webp', 'bmp', 'gif'],
-      'png': ['jpg', 'webp', 'bmp', 'gif'],
-      'webp': ['jpg', 'png', 'bmp', 'gif'],
-      'gif': ['jpg', 'png', 'webp', 'bmp'],
-      'bmp': ['jpg', 'png', 'webp', 'gif'],
+      'jpg': ['png', 'webp'],
+      'jpeg': ['png', 'webp'],
+      'png': ['jpg', 'webp'],
+      'webp': ['jpg', 'png'],
+      'gif': ['jpg', 'png', 'webp'],
+      'bmp': ['jpg', 'png', 'webp'],
+      'svg': ['jpg', 'png', 'webp'],
+      'ico': ['jpg', 'png', 'webp'],
       
       // Audio
       'mp3': ['wav'],
@@ -264,6 +270,7 @@ export class ConversionService {
       'ogg': ['wav'],
       'm4a': ['wav'],
       'aac': ['wav'],
+      'flac': ['wav'],
       
       // Video (limited to frame extraction)
       'mp4': ['jpg', 'png', 'thumbnail'],
@@ -271,6 +278,7 @@ export class ConversionService {
       'avi': ['jpg', 'png', 'thumbnail'],
       'mov': ['jpg', 'png', 'thumbnail'],
       'mkv': ['jpg', 'png', 'thumbnail'],
+      'ogv': ['jpg', 'png', 'thumbnail'],
     };
 
     return conversions[sourceFormat.toLowerCase()] || [];

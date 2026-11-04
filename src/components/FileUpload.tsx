@@ -89,7 +89,7 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
                   Upload {category.charAt(0).toUpperCase() + category.slice(1)} File
                 </h3>
                 <p className="text-sm text-muted-foreground mb-2">
-                  Drop your file here or click to browse
+                  Choose a file from your device
                 </p>
                 <p className="text-xs text-muted-foreground mb-4">
                   Supported formats: {getCategoryDescription(category)}

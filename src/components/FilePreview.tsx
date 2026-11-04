@@ -14,22 +14,19 @@ export const FilePreview = ({ file, category }: FilePreviewProps) => {
   const [textContent, setTextContent] = useState<string>("");
 
   useEffect(() => {
-    const loadPreview = async () => {
-      if (category === FileCategory.IMAGE || category === FileCategory.VIDEO) {
-        const url = URL.createObjectURL(file);
-        setPreviewUrl(url);
-        return () => URL.revokeObjectURL(url);
-      } else if (category === FileCategory.DOCUMENT) {
-        const text = await file.text();
-        setTextContent(text);
-      } else if (category === FileCategory.AUDIO) {
-        const url = URL.createObjectURL(file);
-        setPreviewUrl(url);
-        return () => URL.revokeObjectURL(url);
-      }
-    };
-
-    loadPreview();
+    let active = true;
+    setTextContent('');
+    if (category !== FileCategory.DOCUMENT) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    // Avoid loading binary documents into text memory when no preview exists.
+    if (/\.(md|txt|html)$/i.test(file.name)) {
+      file.text().then(text => { if (active) setTextContent(text); })
+        .catch(() => { if (active) setTextContent('Unable to read file'); });
+    }
+    return () => { active = false; };
   }, [file, category]);
 
   const renderPreview = () => {

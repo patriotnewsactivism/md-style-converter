@@ -2,6 +2,17 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { saveAs } from 'file-saver';
 import html2pdf from 'html2pdf.js';
+import DOMPurify from 'dompurify';
+
+// Uploaded documents must not execute code or load remote resources during export.
+export const sanitizeDocumentHtml = (html: string): string => DOMPurify.sanitize(html, {
+  ALLOWED_TAGS: ['p', 'br', 'div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'b', 'em', 'i', 'u', 's', 'pre', 'code', 'blockquote', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'hr', 'a'],
+  ALLOWED_ATTR: ['href', 'title', 'colspan', 'rowspan'],
+  ALLOW_DATA_ATTR: false,
+  ALLOW_ARIA_ATTR: false,
+});
+
+const escapeHtml = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 export const markdownToHtml = (markdown: string): string => {
   // Simple markdown to HTML conversion
@@ -36,12 +47,12 @@ export const markdownToHtml = (markdown: string): string => {
     return para;
   }).join('\n');
   
-  return html;
+  return sanitizeDocumentHtml(html);
 };
 
 export const htmlToPlainText = (html: string): string => {
   const temp = document.createElement('div');
-  temp.innerHTML = html;
+  temp.innerHTML = sanitizeDocumentHtml(html);
   return temp.textContent || temp.innerText || '';
 };
 
@@ -131,7 +142,7 @@ export const convertHtmlToPDF = async (
   filename: string
 ): Promise<void> => {
   const element = document.createElement('div');
-  element.innerHTML = html;
+  element.innerHTML = sanitizeDocumentHtml(html);
   element.style.padding = '20px';
   element.style.fontFamily = 'Arial, sans-serif';
   element.style.lineHeight = '1.6';
@@ -167,7 +178,7 @@ export const convertTextToHtml = (text: string): string => {
   </style>
 </head>
 <body>
-  <pre>${text}</pre>
+  <pre>${escapeHtml(text)}</pre>
 </body>
 </html>`;
 };

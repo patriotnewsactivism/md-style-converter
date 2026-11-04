@@ -17,8 +17,7 @@ Open your browser and navigate to the application URL. You'll see the main inter
 Click on the appropriate tab for your file type.
 
 **Step 2: Upload File**
-- Click "Select File" button, or
-- Drag and drop your file into the upload area
+- Click "Select File" and choose a local file
 
 **Step 3: Preview**
 Your file will be displayed in the preview panel (left side).
@@ -109,7 +108,7 @@ JPG, JPEG, PNG, GIF, WEBP, BMP, SVG, ICO
 - **JPG → PNG**: For transparency support
 - **PNG → JPG**: For smaller file size
 - **Any → WEBP**: For modern web optimization
-- **Any → BMP**: For compatibility with older software
+- **SVG/ICO → PNG**: Rasterize vector images and icons
 
 #### Options Available:
 - **Quality**: 1-100% (for JPG, WEBP)
@@ -270,3 +269,6 @@ We welcome feedback and contributions!
 ---
 
 **Happy Converting! 🚀**
+## Browser conversion limits
+
+Image output is JPG, PNG or WebP. GIF and BMP are input formats only; SVG and ICO inputs can be rasterized. PDF, DOCX and RTF input conversion is not implemented. FLAC audio and OGV video are supported when your browser can decode them. Document export removes active HTML, styles and remote resources.

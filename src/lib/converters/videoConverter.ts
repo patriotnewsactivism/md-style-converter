@@ -1,240 +1,103 @@
-// Video conversion utilities
-// Note: Browser-based video conversion is very limited
-// For production use, consider server-side processing with FFmpeg
+// Browser video support depends on the input codec. Outputs are still images.
+export const getVideoMetadata = (file: File): Promise<{
+  duration: number; width: number; height: number; size: number;
+}> => new Promise((resolve, reject) => {
+  const video = document.createElement('video');
+  const url = URL.createObjectURL(file);
+  const cleanup = () => {
+    clearTimeout(timer);
+    video.onloadedmetadata = video.onerror = null;
+    video.removeAttribute('src');
+    video.load();
+    URL.revokeObjectURL(url);
+  };
+  const timer = setTimeout(() => { cleanup(); reject(new Error('Video metadata timed out')); }, 15000);
+  video.onloadedmetadata = () => {
+    const metadata = { duration: video.duration, width: video.videoWidth, height: video.videoHeight, size: file.size };
+    cleanup();
+    resolve(metadata);
+  };
+  video.onerror = () => { cleanup(); reject(new Error('This browser cannot decode the video')); };
+  video.preload = 'metadata';
+  video.src = url;
+});
 
-export interface VideoConversionOptions {
-  width?: number;
-  height?: number;
-  quality?: number;
-  fps?: number;
-}
-
-export const getVideoMetadata = async (file: File): Promise<{
-  duration: number;
-  width: number;
-  height: number;
-  size: number;
-}> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const url = URL.createObjectURL(file);
-
-    video.addEventListener('loadedmetadata', () => {
-      resolve({
-        duration: video.duration,
-        width: video.videoWidth,
-        height: video.videoHeight,
-        size: file.size,
-      });
-      URL.revokeObjectURL(url);
-    });
-
-    video.addEventListener('error', () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load video file'));
-    });
-
-    video.src = url;
-  });
-};
-
-export const extractVideoFrame = async (
-  file: File,
-  timeInSeconds: number = 0
-): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const url = URL.createObjectURL(file);
-
-    if (!ctx) {
-      reject(new Error('Failed to get canvas context'));
+const renderFrame = (
+  file: File, time: number | 'thumbnail', format: string,
+  width?: number, height?: number
+): Promise<Blob> => new Promise((resolve, reject) => {
+  const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+  const video = document.createElement('video');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) { reject(new Error('Failed to get canvas context')); return; }
+  const url = URL.createObjectURL(file);
+  let captured = false;
+  let settled = false;
+  let targetTime = 0;
+  const cleanup = () => {
+    clearTimeout(timer);
+    video.onloadedmetadata = video.onloadeddata = video.onseeked = video.onerror = null;
+    video.removeAttribute('src');
+    video.load();
+    URL.revokeObjectURL(url);
+  };
+  const fail = (error: Error) => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    reject(error);
+  };
+  const timer = setTimeout(() => fail(new Error('Video frame extraction timed out')), 15000);
+  const draw = () => {
+    if (settled || captured || video.seeking || video.readyState < 2 || Math.abs(video.currentTime - targetTime) > 0.05) return;
+    captured = true;
+    try {
+      canvas.width = width ?? video.videoWidth;
+      canvas.height = height ?? video.videoHeight;
+      const scale = Math.min(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
+      const drawWidth = video.videoWidth * scale;
+      const drawHeight = video.videoHeight * scale;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, (canvas.width - drawWidth) / 2, (canvas.height - drawHeight) / 2, drawWidth, drawHeight);
+      canvas.toBlob(blob => {
+        if (settled) return;
+        if (!blob || blob.type !== mimeType) { fail(new Error('Failed to encode the requested image format')); return; }
+        settled = true;
+        cleanup();
+        resolve(blob);
+      }, mimeType, 0.95);
+    } catch (error) { fail(error instanceof Error ? error : new Error('Failed to extract frame')); }
+  };
+  video.onloadedmetadata = () => {
+    targetTime = time === 'thumbnail' ? Math.min(1, video.duration * 0.1) : time;
+    if (!Number.isFinite(targetTime) || targetTime < 0 || targetTime >= video.duration) {
+      fail(new Error('Frame time is outside the video duration'));
       return;
     }
+    // At time zero no seek event is guaranteed; loadeddata supplies the first frame.
+    if (targetTime !== video.currentTime) video.currentTime = targetTime;
+    draw();
+  };
+  video.onloadeddata = draw;
+  video.onseeked = draw;
+  video.onerror = () => fail(new Error('This browser cannot decode the video'));
+  video.preload = 'auto';
+  video.muted = true;
+  video.src = url;
+});
 
-    video.addEventListener('loadedmetadata', () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      video.currentTime = timeInSeconds;
-    });
+export const extractVideoFrame = (file: File, timeInSeconds = 0, format = 'jpg'): Promise<Blob> =>
+  renderFrame(file, timeInSeconds, format);
 
-    video.addEventListener('seeked', () => {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to extract frame'));
-        }
-        URL.revokeObjectURL(url);
-      }, 'image/jpeg', 0.95);
-    });
+export const createVideoThumbnail = (file: File, width = 320, height = 180): Promise<Blob> =>
+  renderFrame(file, 'thumbnail', 'jpg', width, height);
 
-    video.addEventListener('error', () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load video'));
-    });
-
-    video.src = url;
-  });
-};
-
-export const resizeVideo = async (
-  file: File,
-  targetWidth: number,
-  targetHeight: number
-): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const url = URL.createObjectURL(file);
-
-    if (!ctx) {
-      reject(new Error('Failed to get canvas context'));
-      return;
-    }
-
-    video.addEventListener('loadedmetadata', () => {
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      
-      // For now, we can only extract a frame
-      // Full video conversion requires MediaRecorder API or server-side processing
-      video.currentTime = 0;
-    });
-
-    video.addEventListener('seeked', () => {
-      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to resize video'));
-        }
-        URL.revokeObjectURL(url);
-      }, 'image/jpeg', 0.95);
-    });
-
-    video.addEventListener('error', () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load video'));
-    });
-
-    video.src = url;
-  });
-};
-
-export const convertVideoToGif = async (
-  file: File,
-  options: {
-    startTime?: number;
-    duration?: number;
-    fps?: number;
-    width?: number;
-    height?: number;
-  } = {}
-): Promise<string> => {
-  // This is a placeholder - actual GIF conversion requires libraries like gif.js
-  // For production, use server-side conversion or a library like FFmpeg.wasm
-  return new Promise((resolve, reject) => {
-    reject(new Error('GIF conversion requires additional libraries. Please use a server-side solution.'));
-  });
-};
-
-// Note: For actual video format conversion (MP4, WebM, etc.),
-// you would need to use:
-// 1. Server-side processing with FFmpeg
-// 2. FFmpeg.wasm (WebAssembly version)
-// 3. Cloud services like Cloudinary or AWS MediaConvert
+export const resizeVideo = (file: File, width: number, height: number): Promise<Blob> =>
+  renderFrame(file, 0, 'jpg', width, height);
 
 export const getVideoInfo = async (file: File): Promise<string> => {
   const metadata = await getVideoMetadata(file);
-  return `
-Video Information:
-- Duration: ${metadata.duration.toFixed(2)} seconds
-- Resolution: ${metadata.width}x${metadata.height}
-- File Size: ${(metadata.size / (1024 * 1024)).toFixed(2)} MB
-- Format: ${file.type}
-  `.trim();
-};
-
-export const createVideoThumbnail = async (
-  file: File,
-  width: number = 320,
-  height: number = 180
-): Promise<Blob> => {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const url = URL.createObjectURL(file);
-
-    if (!ctx) {
-      reject(new Error('Failed to get canvas context'));
-      return;
-    }
-
-    video.addEventListener('loadedmetadata', () => {
-      // Calculate aspect ratio
-      const aspectRatio = video.videoWidth / video.videoHeight;
-      const targetAspectRatio = width / height;
-
-      let drawWidth = width;
-      let drawHeight = height;
-
-      if (aspectRatio > targetAspectRatio) {
-        drawHeight = width / aspectRatio;
-      } else {
-        drawWidth = height * aspectRatio;
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-
-      // Center the video
-      const x = (width - drawWidth) / 2;
-      const y = (height - drawHeight) / 2;
-
-      video.currentTime = Math.min(1, video.duration * 0.1); // 10% into video
-    });
-
-    video.addEventListener('seeked', () => {
-      const aspectRatio = video.videoWidth / video.videoHeight;
-      const targetAspectRatio = width / height;
-
-      let drawWidth = width;
-      let drawHeight = height;
-
-      if (aspectRatio > targetAspectRatio) {
-        drawHeight = width / aspectRatio;
-      } else {
-        drawWidth = height * aspectRatio;
-      }
-
-      const x = (width - drawWidth) / 2;
-      const y = (height - drawHeight) / 2;
-
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, width, height);
-      ctx.drawImage(video, x, y, drawWidth, drawHeight);
-
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error('Failed to create thumbnail'));
-        }
-        URL.revokeObjectURL(url);
-      }, 'image/jpeg', 0.85);
-    });
-
-    video.addEventListener('error', () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Failed to load video'));
-    });
-
-    video.src = url;
-  });
+  return `Duration: ${metadata.duration.toFixed(2)} seconds\nResolution: ${metadata.width}x${metadata.height}\nFile size: ${metadata.size} bytes`;
 };
